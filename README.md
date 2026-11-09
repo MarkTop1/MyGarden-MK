@@ -4,13 +4,13 @@
 
 **一款离线单机的 Android 植物养护记录 App**
 
-[![Release](https://img.shields.io/badge/release-v2.0-4CAF50?style=flat-square)](https://github.com/MarkTop1/MyGarden/releases)
+[![Release](https://img.shields.io/badge/release-v2.0-4CAF50?style=flat-square)](https://github.com/MarkTop1/MyGarden-MK/releases)
 [![Android](https://img.shields.io/badge/android-Android%208.0%2B-3DDC84?style=flat-square)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/kotlin-2.0.21-7F52FF?style=flat-square)](https://kotlinlang.org/)
 [![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=flat-square)](https://developer.android.com/jetpack/compose)
 [![License](https://img.shields.io/badge/license-MIT-8BC34A?style=flat-square)](LICENSE)
 
-[下载 APK](releases/MyGarden-v2.0.apk) · [查看发布记录](https://github.com/MarkTop1/MyGarden/releases) · [提交问题](https://github.com/MarkTop1/MyGarden/issues)
+[下载 APK](releases/MyGarden-v2.0.apk) · [查看发布记录](https://github.com/MarkTop1/MyGarden-MK/releases) · [提交问题](https://github.com/MarkTop1/MyGarden-MK/issues)
 
 </div>
 
@@ -177,8 +177,8 @@ CodeGarden/
 ### 构建命令
 
 ```bash
-git clone https://github.com/MarkTop1/MyGarden.git
-cd MyGarden
+git clone https://github.com/MarkTop1/MyGarden-MK.git
+cd MyGarden-MK
 
 # Debug 包（无需任何签名配置）
 ./gradlew assembleDebug
