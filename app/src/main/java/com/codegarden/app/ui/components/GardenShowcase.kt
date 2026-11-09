@@ -32,15 +32,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -74,18 +78,22 @@ import com.codegarden.app.ui.theme.SunGlow
 import com.codegarden.app.ui.theme.SunHalo
 import com.codegarden.app.ui.theme.SunRay
 import com.codegarden.app.ui.theme.WaterBlue
+import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.sin
 
 /**
  * 「我的花园」橱窗：QQ 农场风格的展示框。
  * 上半部是天空（随天气变化），下半部是草地与土壤，
  * 每盆植物以默认品种插画站在草地上，随风轻摆；
- * 天气决定天空配色与特效：晴天有太阳、阴天有云、下雨有雨滴。
+ * 天气决定天空配色与特效：晴天有太阳、阴天有云、下雨有雨滴，
+ * 白天的好天气里还有小鸟掠过天空、蝴蝶与蜜蜂在花间飞舞。
  */
 @Composable
 fun GardenShowcase(
     plants: List<MyPlant>,
     condition: WeatherCondition?,
+    isDay: Boolean = true,
     needWater: Int = 0,
     needFertilize: Int = 0,
     overdue: Int = 0,
@@ -236,7 +244,7 @@ fun GardenShowcase(
             )
 
             // 天气特效
-            WeatherEffects(condition, isDark)
+            WeatherEffects(condition, isDark, isDay)
 
             // 标题浮于画面左上
             Text(
@@ -473,70 +481,112 @@ private fun ShowcasePlant(
 // ======================================================================
 
 @Composable
-private fun WeatherEffects(condition: WeatherCondition?, isDark: Boolean) {
+private fun WeatherEffects(condition: WeatherCondition?, isDark: Boolean, isDay: Boolean) {
     val transition = rememberInfiniteTransition(label = "weather")
-    // 保留 State 形式，供各层在绘制阶段读取，避免每帧重组
-    val progress = transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(4200, easing = LinearEasing)),
-        label = "weatherProgress"
+    // 各层持有独立节奏：云慢漂、雨快落、雪缓降，避免「一个时钟驱动全部」的机械感。
+    // 全部保留 State 形式，在绘制阶段读取，只重绘不重组。
+    val cloudDrift = transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(30000, easing = LinearEasing)),
+        label = "cloudDrift"
+    )
+    val sunSpin = transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(36000, easing = LinearEasing)),
+        label = "sunSpin"
     )
     val pulse = transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing), RepeatMode.Reverse),
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(3200, easing = LinearEasing), RepeatMode.Reverse),
         label = "weatherPulse"
+    )
+    val twinkle = transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(3600, easing = LinearEasing)),
+        label = "starTwinkle"
+    )
+    val shoot = transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(9000, easing = LinearEasing)),
+        label = "shootingStar"
+    )
+    val rainFall = transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(950, easing = LinearEasing)),
+        label = "rainFall"
+    )
+    val snowFall = transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(6800, easing = LinearEasing)),
+        label = "snowFall"
+    )
+    val stormCycle = transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(5600, easing = LinearEasing)),
+        label = "stormCycle"
+    )
+    val mistDrift = transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(13000, easing = LinearEasing), RepeatMode.Reverse),
+        label = "mistDrift"
     )
 
     when (condition) {
         WeatherCondition.CLEAR -> if (isDark) {
-            StarLayer(progress)
+            StarLayer(twinkle, shoot)
             MoonLayer(pulse)
         } else {
-            SunLayer(progress, pulse)
+            SunLayer(sunSpin, pulse)
         }
         WeatherCondition.PARTLY_CLOUDY -> {
             if (isDark) {
-                StarLayer(progress)
+                StarLayer(twinkle, shoot)
                 MoonLayer(pulse)
             } else {
-                SunLayer(progress, pulse)
+                SunLayer(sunSpin, pulse)
             }
-            CloudLayer(progress, 1)
+            CloudLayer(cloudDrift, count = 2, storm = false)
         }
-        WeatherCondition.CLOUDY, WeatherCondition.FOG -> {
-            if (isDark) StarLayer(progress)
-            CloudLayer(progress, 2)
+        WeatherCondition.CLOUDY -> {
+            if (isDark) StarLayer(twinkle, shoot)
+            CloudLayer(cloudDrift, count = 3, storm = false)
+        }
+        WeatherCondition.FOG -> {
+            if (isDark) StarLayer(twinkle, shoot)
+            CloudLayer(cloudDrift, count = 1, storm = false)
+            MistLayer(mistDrift)
         }
         WeatherCondition.DRIZZLE -> {
-            if (isDark) StarLayer(progress)
-            CloudLayer(progress, 1)
-            RainLayer(progress, light = true)
+            CloudLayer(cloudDrift, count = 2, storm = true)
+            RainLayer(rainFall, light = true)
         }
         WeatherCondition.RAIN -> {
-            if (isDark) StarLayer(progress)
-            CloudLayer(progress, 2)
-            RainLayer(progress, light = false)
+            CloudLayer(cloudDrift, count = 3, storm = true)
+            RainLayer(rainFall, light = false)
         }
         WeatherCondition.THUNDER -> {
-            if (isDark) StarLayer(progress)
-            CloudLayer(progress, 2)
-            RainLayer(progress, light = false)
+            CloudLayer(cloudDrift, count = 3, storm = true)
+            RainLayer(rainFall, light = false)
+            LightningLayer(stormCycle)
         }
         WeatherCondition.SNOW -> {
-            if (isDark) StarLayer(progress)
-            CloudLayer(progress, 1)
-            SnowLayer(progress)
+            if (isDark) StarLayer(twinkle, shoot)
+            CloudLayer(cloudDrift, count = 2, storm = false)
+            SnowLayer(snowFall)
         }
         null, WeatherCondition.UNKNOWN -> {
-            if (isDark) StarLayer(progress)
-            CloudLayer(progress, 1)
+            if (isDark) StarLayer(twinkle, shoot)
+            CloudLayer(cloudDrift, count = 1, storm = false)
         }
+    }
+
+    // 白天的小生灵：仅在白昼 + 浅色场景出现，雨雪雷雾天自动躲起来
+    if (isDay && !isDark) {
+        DayCreatures(condition)
     }
 }
 
-/** 夜晚：月亮 + 光晕 */
+/** 夜晚：月亮 + 呼吸光晕 + 淡淡光环 */
 @Composable
 private fun MoonLayer(pulse: State<Float>) {
     val core = MoonCore
@@ -544,126 +594,195 @@ private fun MoonLayer(pulse: State<Float>) {
     Canvas(modifier = Modifier.fillMaxSize()) {
         val p = pulse.value
         val cx = size.width * 0.84f
-        val cy = size.height * 0.13f
-        val base = size.minDimension * 0.045f
+        val cy = size.height * 0.14f
+        val base = size.minDimension * 0.046f
         drawCircle(
             brush = Brush.radialGradient(
-                listOf(glow.copy(alpha = 0.40f + 0.20f * p), Color.Transparent),
+                listOf(glow.copy(alpha = 0.38f + 0.18f * p), Color.Transparent),
                 center = Offset(cx, cy),
-                radius = base * 4.6f
+                radius = base * 4.8f
             ),
             center = Offset(cx, cy),
-            radius = base * 4.6f
+            radius = base * 4.8f
         )
-        drawCircle(color = core, radius = base, center = Offset(cx, cy))
+        drawCircle(
+            color = glow.copy(alpha = 0.16f + 0.10f * p),
+            radius = base * (1.9f + 0.15f * p),
+            center = Offset(cx, cy),
+            style = Stroke(width = 1.2f)
+        )
+        drawCircle(
+            brush = Brush.radialGradient(
+                listOf(core, glow.copy(alpha = 0.85f)),
+                center = Offset(cx - base * 0.3f, cy - base * 0.3f),
+                radius = base * 1.6f
+            ),
+            radius = base,
+            center = Offset(cx, cy)
+        )
         // 环形山
-        drawCircle(
-            color = glow.copy(alpha = 0.45f),
-            radius = base * 0.22f,
-            center = Offset(cx - base * 0.28f, cy - base * 0.24f)
-        )
-        drawCircle(
-            color = glow.copy(alpha = 0.35f),
-            radius = base * 0.14f,
-            center = Offset(cx + base * 0.30f, cy + base * 0.22f)
-        )
+        drawCircle(glow.copy(alpha = 0.50f), base * 0.22f, Offset(cx - base * 0.28f, cy - base * 0.24f))
+        drawCircle(glow.copy(alpha = 0.40f), base * 0.14f, Offset(cx + base * 0.30f, cy + base * 0.22f))
+        drawCircle(glow.copy(alpha = 0.32f), base * 0.10f, Offset(cx + base * 0.05f, cy - base * 0.45f))
     }
 }
 
-/** 夜晚：闪烁的星星 */
+/** 夜晚：闪烁星星 + 十字闪光 + 偶发流星 */
 @Composable
-private fun StarLayer(progress: State<Float>) {
+private fun StarLayer(twinkle: State<Float>, shoot: State<Float>) {
     val tint = StarTint
     Canvas(modifier = Modifier.fillMaxSize()) {
-        val p = progress.value
+        val p = twinkle.value
+        val twoPi = (Math.PI * 2).toFloat()
         for (i in 0 until 18) {
             val fx = ((i * 71) % 100) / 100f
             val fy = ((i * 37) % 62) / 100f
-            val twinkle = 0.35f + 0.65f * kotlin.math.abs(
-                kotlin.math.sin(p * 2 * Math.PI + i * 0.7f).toFloat()
-            )
+            val t = 0.35f + 0.65f * abs(sin(p * twoPi + i * 0.7f))
             val r = 0.9f + (i % 3) * 0.6f
             drawCircle(
-                color = tint.copy(alpha = twinkle * 0.9f),
+                color = tint.copy(alpha = t * 0.9f),
                 radius = r,
                 center = Offset(size.width * fx, size.height * fy)
             )
         }
+        // 三颗较大的十字闪光星
+        for (i in 0 until 3) {
+            val fx = 0.14f + i * 0.31f
+            val fy = 0.10f + (i % 2) * 0.16f
+            val t = 0.3f + 0.7f * abs(sin(p * twoPi * 0.8f + i * 1.9f))
+            val c = Offset(size.width * fx, size.height * fy)
+            val len = 3.2f + 1.6f * t
+            val col = tint.copy(alpha = 0.85f * t)
+            drawLine(col, Offset(c.x - len, c.y), Offset(c.x + len, c.y), 1f, StrokeCap.Round)
+            drawLine(col, Offset(c.x, c.y - len), Offset(c.x, c.y + len), 1f, StrokeCap.Round)
+            drawCircle(col, 1.1f, c)
+        }
+        // 流星：每 9 秒划过一次高空
+        val sp = shoot.value
+        if (sp in 0.05f..0.23f) {
+            val f = (sp - 0.05f) / 0.18f
+            val fade = sin(f * Math.PI).toFloat()
+            val headX = size.width * (0.16f + 0.42f * f)
+            val headY = size.height * (0.06f + 0.20f * f)
+            val tail = Offset(headX - size.width * 0.10f, headY - size.height * 0.048f)
+            val head = Offset(headX, headY)
+            drawLine(
+                brush = Brush.linearGradient(
+                    listOf(Color.Transparent, tint.copy(alpha = 0.8f * fade)),
+                    start = tail,
+                    end = head
+                ),
+                start = tail,
+                end = head,
+                strokeWidth = 1.8f,
+                cap = StrokeCap.Round
+            )
+            drawCircle(tint.copy(alpha = fade), 1.8f, head)
+        }
     }
 }
 
-/** 太阳：右上角光晕 + 放射光芒 */
+/** 太阳：双层呼吸光晕 + 缓慢旋转的长短圆头光芒 + 渐变日核 */
 @Composable
-private fun SunLayer(progress: State<Float>, pulse: State<Float>) {
+private fun SunLayer(spin: State<Float>, pulse: State<Float>) {
     val core = SunCore
     val glow = SunGlow
     val ray = SunRay
     val halo = SunHalo
     Canvas(modifier = Modifier.fillMaxSize()) {
-        val p = progress.value
-        val pulseV = pulse.value
+        val s = spin.value
+        val p = pulse.value
         val cx = size.width * 0.86f
-        val cy = size.height * 0.11f
-        val base = size.minDimension * 0.045f
+        val cy = size.height * 0.14f
+        val base = size.minDimension * 0.050f
+        val twoPi = (Math.PI * 2).toFloat()
+        // 外层呼吸光晕
         drawCircle(
             brush = Brush.radialGradient(
-                listOf(glow.copy(alpha = 0.55f + 0.25f * pulseV), Color.Transparent),
+                listOf(glow.copy(alpha = 0.50f + 0.22f * p), Color.Transparent),
                 center = Offset(cx, cy),
-                radius = base * 4.2f
+                radius = base * 5f
             ),
             center = Offset(cx, cy),
-            radius = base * 4.2f
+            radius = base * 5f
         )
-        val rays = 8
+        drawCircle(
+            brush = Brush.radialGradient(
+                listOf(halo.copy(alpha = 0.30f + 0.15f * p), Color.Transparent),
+                center = Offset(cx, cy),
+                radius = base * 2.6f
+            ),
+            center = Offset(cx, cy),
+            radius = base * 2.6f
+        )
+        // 细细的光环圈
+        drawCircle(
+            color = halo.copy(alpha = 0.22f + 0.14f * p),
+            radius = base * (2.05f + 0.18f * p),
+            center = Offset(cx, cy),
+            style = Stroke(width = 1.4f)
+        )
+        // 12 根圆头光芒，长短相间，整体缓慢旋转
+        val rays = 12
         for (i in 0 until rays) {
-            val a = (i * 45f + p * 22f) * (Math.PI / 180f)
-            val r0 = base * 1.7f
-            val r1 = base * (2.6f + 0.35f * sin(p * 2 * Math.PI + i).toFloat())
+            val a = (i * (360f / rays) + s * 360f) * (Math.PI / 180f).toFloat()
+            val r0 = base * 1.5f
+            val breathe = 0.22f * sin(s * twoPi * 3f + i * 0.9f)
+            val r1 = base * ((if (i % 2 == 0) 2.45f else 2.0f) + breathe)
             drawLine(
-                color = ray.copy(alpha = 0.55f),
-                start = Offset(
-                    cx + r0 * kotlin.math.cos(a).toFloat(),
-                    cy + r0 * kotlin.math.sin(a).toFloat()
-                ),
-                end = Offset(
-                    cx + r1 * kotlin.math.cos(a).toFloat(),
-                    cy + r1 * kotlin.math.sin(a).toFloat()
-                ),
-                strokeWidth = 2.4f
+                color = ray.copy(alpha = if (i % 2 == 0) 0.7f else 0.45f),
+                start = Offset(cx + r0 * cos(a), cy + r0 * sin(a)),
+                end = Offset(cx + r1 * cos(a), cy + r1 * sin(a)),
+                strokeWidth = if (i % 2 == 0) 2.8f else 2.2f,
+                cap = StrokeCap.Round
             )
         }
-        drawCircle(color = core, radius = base, center = Offset(cx, cy))
-        drawCircle(color = halo.copy(alpha = 0.9f), radius = base * 0.62f, center = Offset(cx, cy))
+        // 日核：偏心径向渐变 + 高光点
+        drawCircle(
+            brush = Brush.radialGradient(
+                listOf(halo, core),
+                center = Offset(cx - base * 0.25f, cy - base * 0.25f),
+                radius = base * 1.5f
+            ),
+            radius = base,
+            center = Offset(cx, cy)
+        )
+        drawCircle(
+            color = Color.White.copy(alpha = 0.38f),
+            radius = base * 0.30f,
+            center = Offset(cx - base * 0.30f, cy - base * 0.34f)
+        )
     }
 }
 
-/** 云：横向漂移的立体云朵，错层阴影更有体积感 */
+/** 云：远近错层、速度各异的漂移云朵；雷雨时压暗成乌云 */
 @Composable
-private fun CloudLayer(progress: State<Float>, count: Int) {
-    val body = CloudBody
+private fun CloudLayer(drift: State<Float>, count: Int, storm: Boolean) {
+    val cloudBody = CloudBody
+    val body = if (storm) lerp(cloudBody, Color(0xFF77828E), 0.55f) else cloudBody
     Canvas(modifier = Modifier.fillMaxSize()) {
-        val p = progress.value
-        val drift = size.width * 1.5f
+        val p = drift.value
+        val w = size.width
+        val h = size.height
         for (i in 0 until count) {
-            val raw = (p + i * 0.47f) % 1f
-            val x = -size.width * 0.25f + drift * raw
-            val y = size.height * (0.10f + 0.10f * (i % 2))
-            val scale = size.minDimension * (0.050f + 0.014f * (i % 2))
-            drawCloud(Offset(x, y), scale, body.copy(alpha = 0.92f))
+            val far = i % 2 == 1
+            val speed = if (far) 0.55f else 0.85f + 0.15f * (i % 3) / 2f
+            val raw = (p * speed + i * 0.37f) % 1f
+            val x = -w * 0.28f + w * 1.56f * raw
+            val y = h * (if (far) 0.09f + 0.05f * (i % 3) else 0.15f + 0.07f * (i % 2))
+            val scale = size.minDimension * (if (far) 0.038f else 0.055f + 0.010f * (i % 2))
+            val alpha = if (far) 0.55f else 0.92f
+            drawCloud(Offset(x, y), scale, body.copy(alpha = alpha))
         }
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCloud(
-    center: Offset,
-    scale: Float,
-    color: Color
-) {
-    val shade = color.copy(alpha = color.alpha * 0.55f)
-    // 底部阴影层（向下错位）
-    drawCircle(color = shade, radius = scale * 0.95f, center = center + Offset(-scale * 0.8f, scale * 0.42f))
-    drawCircle(color = shade, radius = scale * 1.12f, center = center + Offset(0f, scale * 0.38f))
-    drawCircle(color = shade, radius = scale * 0.75f, center = center + Offset(scale * 0.9f, scale * 0.44f))
+private fun DrawScope.drawCloud(center: Offset, scale: Float, color: Color) {
+    val shade = color.copy(alpha = color.alpha * 0.5f)
+    // 底部阴影层（向下错位），营造体积感
+    drawCircle(color = shade, radius = scale * 0.95f, center = center + Offset(-scale * 0.8f, scale * 0.46f))
+    drawCircle(color = shade, radius = scale * 1.12f, center = center + Offset(0f, scale * 0.42f))
+    drawCircle(color = shade, radius = scale * 0.75f, center = center + Offset(scale * 0.9f, scale * 0.48f))
     // 主体
     drawCircle(color = color, radius = scale, center = center + Offset(-scale * 0.85f, scale * 0.15f))
     drawCircle(color = color, radius = scale * 1.15f, center = center + Offset(0f, -scale * 0.12f))
@@ -672,50 +791,174 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCloud(
         color = color,
         topLeft = Offset(center.x - scale * 1.4f, center.y + scale * 0.1f),
         size = Size(scale * 2.8f, scale * 0.95f),
-        cornerRadius = androidx.compose.ui.geometry.CornerRadius(scale * 0.45f)
+        cornerRadius = CornerRadius(scale * 0.45f)
+    )
+    // 云顶高光
+    drawCircle(
+        color = Color.White.copy(alpha = color.alpha * 0.35f),
+        radius = scale * 0.5f,
+        center = center + Offset(-scale * 0.2f, -scale * 0.5f)
     )
 }
 
-/** 雨：斜向雨滴 */
+/** 雨：粗细渐变的斜雨丝 + 草线处绽开的小水花 */
 @Composable
 private fun RainLayer(progress: State<Float>, light: Boolean) {
     val dropColor = WaterBlue
     Canvas(modifier = Modifier.fillMaxSize()) {
         val p = progress.value
-        val drops = if (light) 12 else 18
-        val alpha = if (light) 0.35f else 0.55f
+        val w = size.width
+        val h = size.height
+        val horizon = h * 0.72f
+        val drops = if (light) 14 else 24
+        val alpha = if (light) 0.34f else 0.55f
+        val slant = if (light) 0.12f else 0.20f
         for (i in 0 until drops) {
             val fx = ((i * 47) % 100) / 100f
-            val phase = (p + i / drops.toFloat()) % 1f
-            val y = phase * size.height
-            val x = size.width * fx + y * 0.18f
-            val len = size.height * (0.05f + 0.02f * (i % 3))
+            val speed = 0.8f + (i % 4) * 0.14f
+            val phase = (p * speed + i / drops.toFloat()) % 1f
+            val y = phase * (horizon + h * 0.06f)
+            val x = w * fx + y * slant
+            val len = h * (0.045f + 0.02f * (i % 3))
             drawLine(
-                color = dropColor.copy(alpha = alpha),
+                brush = Brush.verticalGradient(
+                    listOf(dropColor.copy(alpha = alpha * 0.25f), dropColor.copy(alpha = alpha)),
+                    startY = y,
+                    endY = y + len
+                ),
                 start = Offset(x, y),
-                end = Offset(x + len * 0.22f, y + len),
-                strokeWidth = 2.2f
+                end = Offset(x + len * slant, y + len),
+                strokeWidth = if (light) 1.6f else 2.2f,
+                cap = StrokeCap.Round
+            )
+        }
+        // 落地水花：草线上一圈圈扩散的小水环
+        val splashes = if (light) 4 else 7
+        for (i in 0 until splashes) {
+            val fx = ((i * 31 + 9) % 92) / 100f + 0.04f
+            val phase = (p * 1.6f + i * 0.41f) % 1f
+            val fade = 1f - phase
+            val rx = 2.5f + 5.5f * phase
+            drawOval(
+                color = dropColor.copy(alpha = 0.4f * fade),
+                topLeft = Offset(w * fx - rx, horizon + 3f - rx * 0.32f),
+                size = Size(rx * 2f, rx * 0.64f),
+                style = Stroke(width = 1.1f)
             )
         }
     }
 }
 
-/** 雪：飘落的雪花 */
+/** 雷阵雨：周期性劈下的闪电 + 瞬间被照亮的天空 */
+@Composable
+private fun LightningLayer(cycle: State<Float>) {
+    val boltCore = Color(0xFFFFF8D0)
+    val boltGlow = Color(0xFFFFDE7A)
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val p = cycle.value
+        val w = size.width
+        val h = size.height
+        // 天空被闪电瞬间照亮（主闪 + 余闪）
+        val flash = when {
+            p in 0.62f..0.70f -> sin((p - 0.62f) / 0.08f * Math.PI).toFloat()
+            p in 0.72f..0.76f -> 0.5f * sin((p - 0.72f) / 0.04f * Math.PI).toFloat()
+            else -> 0f
+        }
+        if (flash > 0f) {
+            drawRect(Color.White.copy(alpha = 0.16f * flash))
+        }
+        val boltAlpha = when {
+            p in 0.62f..0.70f -> sin((p - 0.62f) / 0.08f * Math.PI).toFloat()
+            p in 0.72f..0.78f -> sin((p - 0.72f) / 0.06f * Math.PI).toFloat()
+            else -> 0f
+        }
+        if (boltAlpha > 0.02f) {
+            val bolt = Path().apply {
+                moveTo(w * 0.55f, h * 0.14f)
+                lineTo(w * 0.45f, h * 0.38f)
+                lineTo(w * 0.52f, h * 0.38f)
+                lineTo(w * 0.43f, h * 0.60f)
+                lineTo(w * 0.58f, h * 0.34f)
+                lineTo(w * 0.50f, h * 0.34f)
+                lineTo(w * 0.58f, h * 0.14f)
+                close()
+            }
+            drawPath(
+                bolt,
+                color = boltGlow.copy(alpha = 0.40f * boltAlpha),
+                style = Stroke(width = 6f, join = StrokeJoin.Round)
+            )
+            drawPath(bolt, color = boltCore.copy(alpha = 0.95f * boltAlpha))
+        }
+    }
+}
+
+/** 雾：几条缓缓左右漂移的半透明雾带 */
+@Composable
+private fun MistLayer(drift: State<Float>) {
+    val cloudBody = CloudBody
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val p = drift.value
+        val w = size.width
+        val h = size.height
+        val twoPi = (Math.PI * 2).toFloat()
+        for (i in 0 until 4) {
+            val y = h * (0.30f + i * 0.11f)
+            val offset = sin((p + i * 0.25f) * twoPi) * w * 0.06f
+            val bandW = w * (0.62f + 0.10f * (i % 2))
+            val x = w * (0.08f + 0.06f * (i % 3)) + offset
+            val bandH = h * 0.035f
+            drawRoundRect(
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        Color.Transparent,
+                        cloudBody.copy(alpha = 0.30f),
+                        cloudBody.copy(alpha = 0.30f),
+                        Color.Transparent
+                    ),
+                    startX = x,
+                    endX = x + bandW
+                ),
+                topLeft = Offset(x, y),
+                size = Size(bandW, bandH),
+                cornerRadius = CornerRadius(bandH / 2f)
+            )
+        }
+    }
+}
+
+/** 雪：大小不一的雪花摇曳飘落，大雪花是缓缓旋转的六出冰晶 */
 @Composable
 private fun SnowLayer(progress: State<Float>) {
     val snow = SnowBody
     Canvas(modifier = Modifier.fillMaxSize()) {
         val p = progress.value
-        for (i in 0 until 18) {
+        val w = size.width
+        val h = size.height
+        val twoPi = (Math.PI * 2).toFloat()
+        for (i in 0 until 20) {
             val fx = ((i * 61) % 100) / 100f
-            val phase = (p + i / 18f) % 1f
-            val y = phase * size.height
-            val x = size.width * fx + sin((phase * 4f + i).toDouble()).toFloat() * 14f
-            drawCircle(
-                color = snow.copy(alpha = 0.85f),
-                radius = 2.2f + (i % 3) * 0.8f,
-                center = Offset(x, y)
-            )
+            val speed = 0.75f + (i % 4) * 0.12f
+            val phase = (p * speed + i / 20f) % 1f
+            val y = phase * h
+            val sway = sin((phase * 1.5f + i * 0.4f) * twoPi) * (8f + (i % 3) * 5f)
+            val x = w * fx + sway
+            val r = 1.6f + (i % 4) * 0.7f
+            if (i % 5 == 0) {
+                // 大雪花：三道交叉手臂，随下落缓慢旋转
+                val rot = phase * twoPi * 0.5f + i
+                val col = snow.copy(alpha = 0.9f)
+                for (arm in 0 until 3) {
+                    val a = rot + arm * (Math.PI / 3f).toFloat()
+                    val dx = cos(a) * r * 2.1f
+                    val dy = sin(a) * r * 2.1f
+                    drawLine(col, Offset(x - dx, y - dy), Offset(x + dx, y + dy), 1.2f, StrokeCap.Round)
+                }
+                drawCircle(col, r * 0.5f, Offset(x, y))
+            } else {
+                val alpha = 0.5f + 0.4f * ((i % 3) / 2f)
+                drawCircle(snow.copy(alpha = alpha), r, Offset(x, y))
+            }
         }
     }
 }

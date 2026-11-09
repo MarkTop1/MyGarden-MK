@@ -5,7 +5,7 @@ import com.codegarden.app.data.model.PlantCategory
 import com.codegarden.app.data.model.PlantSpecies
 import org.json.JSONArray
 
-/** 内置 500 种常见盆栽图鉴，从 assets/plants.json 加载，进程内缓存一次 */
+/** 内置 1000 种常见盆栽图鉴，从 assets/plants.json 加载，进程内缓存一次 */
 object PlantCatalog {
 
     private var cached: List<PlantSpecies>? = null

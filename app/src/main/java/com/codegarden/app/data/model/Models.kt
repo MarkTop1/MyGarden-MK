@@ -30,7 +30,7 @@ enum class PlantCategory(val label: String, val emoji: String) {
     }
 }
 
-/** 图鉴条目：内置 500 种常见盆栽 */
+/** 图鉴条目：内置 1000 种常见盆栽 */
 data class PlantSpecies(
     val id: Int,
     val name: String,

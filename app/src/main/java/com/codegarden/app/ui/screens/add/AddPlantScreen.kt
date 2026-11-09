@@ -156,7 +156,7 @@ fun AddPlantScreen(
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("🔍 从 500 种盆栽中选择", fontSize = 14.sp, color = MintDeep)
+                        Text("🔍 从 1000 种盆栽中选择", fontSize = 14.sp, color = MintDeep)
                     }
                 }
             } else {

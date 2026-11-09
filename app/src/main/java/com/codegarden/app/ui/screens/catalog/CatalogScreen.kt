@@ -58,7 +58,7 @@ import com.codegarden.app.ui.theme.MintDeep
 import com.codegarden.app.ui.theme.WarmBg
 import com.codegarden.app.viewmodel.MainViewModel
 
-/** Tab2 图鉴：内置 500 种常见盆栽，搜索 + 分类筛选，点开查看养护要点并可一键添加 */
+/** Tab2 图鉴：内置 1000 种常见盆栽，搜索 + 分类筛选，点开查看养护要点并可一键添加 */
 @Composable
 fun CatalogScreen(vm: MainViewModel, onAddSpecies: (Int) -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }

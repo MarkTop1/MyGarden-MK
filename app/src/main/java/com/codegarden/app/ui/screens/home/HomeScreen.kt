@@ -164,9 +164,12 @@ fun HomeScreen(
             item {
                 StaggeredWrap(1) {
                     val weather by vm.weather.collectAsStateWithLifecycle()
+                    // 昼夜优先取天气接口的 is_day，未加载时按本地时间兜底
+                    val isDay = weather.info?.isDay ?: (LocalTime.now().hour in 6..17)
                     GardenShowcase(
                         plants = sorted,
                         condition = weather.info?.condition,
+                        isDay = isDay,
                         needWater = summary.needWater,
                         needFertilize = summary.needFertilize,
                         overdue = summary.overdue,
@@ -477,7 +480,7 @@ private fun EmptyGarden(onAddPlant: () -> Unit) {
             Text("花园还空空的", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = InkDark)
             Spacer(Modifier.height(6.dp))
             Text(
-                "从 500 种常见盆栽里挑一盆，\n或者拍照记录你自己的植物",
+                "从 1000 种常见盆栽里挑一盆，\n或者拍照记录你自己的植物",
                 fontSize = 12.sp, color = InkSecondary, textAlign = TextAlign.Center, lineHeight = 18.sp
             )
             Spacer(Modifier.height(16.dp))

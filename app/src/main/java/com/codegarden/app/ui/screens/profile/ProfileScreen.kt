@@ -201,10 +201,10 @@ fun ProfileScreen(state: AppState, vm: MainViewModel, onOpenTrash: () -> Unit) {
             confirm = DialogAction("好的", onClick = { showAbout = false })
         ) {
             Column {
-                Text("我的花园 v1.0.0", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = InkDark)
+                Text("我的花园 v2.0.0", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = InkDark)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "一款治愈系植物养护记录应用。内置 500 种常见盆栽，记录每一盆花什么时候该浇水、什么时候该施肥，到期自动提醒。支持拍照存档。",
+                    "一款治愈系植物养护记录应用。内置 1000 种常见盆栽，记录每一盆花什么时候该浇水、什么时候该施肥，到期自动提醒。支持拍照存档。",
                     fontSize = 12.sp, lineHeight = 19.sp, color = InkSecondary
                 )
                 Spacer(Modifier.height(8.dp))

@@ -4,15 +4,26 @@
 
 **一款离线单机的 Android 植物养护记录 App**
 
-[![Release](https://img.shields.io/badge/release-v1.0-4CAF50?style=flat-square)](https://github.com/MarkTop1/MyGarden/releases)
+[![Release](https://img.shields.io/badge/release-v2.0-4CAF50?style=flat-square)](https://github.com/MarkTop1/MyGarden/releases)
 [![Android](https://img.shields.io/badge/android-Android%208.0%2B-3DDC84?style=flat-square)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/kotlin-2.0.21-7F52FF?style=flat-square)](https://kotlinlang.org/)
 [![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=flat-square)](https://developer.android.com/jetpack/compose)
 [![License](https://img.shields.io/badge/license-MIT-8BC34A?style=flat-square)](LICENSE)
 
-[下载 APK](releases/MyGarden-v1.0.apk) · [查看发布记录](https://github.com/MarkTop1/MyGarden/releases) · [提交问题](https://github.com/MarkTop1/MyGarden/issues)
+[下载 APK](releases/MyGarden-v2.0.apk) · [查看发布记录](https://github.com/MarkTop1/MyGarden/releases) · [提交问题](https://github.com/MarkTop1/MyGarden/issues)
 
 </div>
+
+---
+
+<p align="center">
+  <img src="docs/screenshots/home-light.webp" width="23%" alt="花园首页（日间）" />
+  <img src="docs/screenshots/home-dark.webp" width="23%" alt="花园首页（深夜模式）" />
+  <img src="docs/screenshots/catalog.webp" width="23%" alt="植物图鉴" />
+  <img src="docs/screenshots/profile.webp" width="23%" alt="我的" />
+</p>
+
+<p align="center"><sub>花园 · 深夜花园 · 图鉴 · 我的</sub></p>
 
 ---
 
@@ -22,9 +33,9 @@
 
 - **完全离线** —— 所有数据只存在你的手机本地，不联网也能用，不上传任何隐私
 - **无需登录** —— 打开即用，没有账号体系
-- **开箱即装** —— 内置 500 种常见盆栽图鉴，第一次打开就能开始记录
+- **开箱即装** —— 内置 1000 种常见盆栽图鉴，第一次打开就能开始记录
 
-> 📦 **当前版本：v1.0**　｜　包名 `com.codegarden.app`　｜　最低支持 Android 8.0 (API 26)
+> 📦 **当前版本：v2.0**　｜　包名 `com.codegarden.app`　｜　最低支持 Android 8.0 (API 26)
 
 ---
 
@@ -32,6 +43,9 @@
 
 ### 🌱 我的花园（首页）
 
+- **花园全景** —— 每盆植物都以插画形式立在草地上，风过时轻轻摇曳
+- **会呼吸的天空** —— 天空配色随实时天气与昼夜切换：晴天的太阳缓缓旋转，阴天飘过云层，雨天落雨、雪天飘雪，雷雨会闪过一道电光，起雾时远景朦胧
+- **昼夜与流星** —— 入夜后天空转为深蓝，星星闪烁、偶有流星划过；白天则有小鸟横掠、蝴蝶与蜜蜂在草间停留
 - **待办概览** —— 今日需浇水 / 需施肥 / 已逾期，一眼看清
 - **健康状态** —— 每盆植物按逾期程度分为 6 档：✨ 生机盎然 → 🌱 状态良好 → 💧 需要照料 → 🌿 叶子微垂 → 🍂 叶尖泛黄 → 🥀 枯萎了
 - **到期文案** —— 「今天」「3 天后」「已逾期 2 天」，不用自己换算
@@ -45,15 +59,16 @@
 
 ### 📖 植物图鉴
 
-- **内置 500 种**常见盆栽，涵盖 **8 大分类**
+- **内置 1000 种**常见盆栽，涵盖 **8 大分类**
 
-  | 分类 | 说明 | 分类 | 说明 |
+  | 分类 | 数量 | 分类 | 数量 |
   |------|------|------|------|
-  | 🪴 多肉植物 | Succulent | 🌿 观叶植物 | Foliage |
-  | 🌵 仙人掌类 | Cactus | 🌸 开花植物 | Flowering |
-  | 🌱 香草植物 | Herb | 🌳 盆景木本 | Bonsai |
-  | 🌷 球根花卉 | Bulb | 🪷 水生植物 | Aquatic |
+  | 🪴 多肉植物 | 220 | 🌿 观叶植物 | 180 |
+  | 🌵 仙人掌类 | 140 | 🌸 开花植物 | 180 |
+  | 🌱 香草植物 | 90 | 🌳 盆景木本 | 90 |
+  | 🌷 球根花卉 | 60 | 🪷 水生植物 | 40 |
 
+- 635 张手绘风植物插画，随包内置、无需联网加载
 - 每种植物含**参考浇水周期、施肥周期、光照需求、养护难度、栽培要点**
 - 支持搜索与分类筛选
 - 一键「就养这盆」—— 直接从图鉴添加到我的花园
@@ -75,7 +90,7 @@
 
 - 基于 **Open-Meteo** 公共接口，**无需任何 API Key**
 - 自动定位或手动搜索城市；支持坐标反查城市名
-- 依据 WMO 天气码归类为 ☀️ 晴 / ⛅ 晴间多云 / ☁️ 阴 / 🌫️ 有雾 / 🌦️ 毛毛雨 / 🌧️ 有雨 / ❄️ 有雪 / ⛈️ 雷阵雨
+- 依据 WMO 天气码归类为 ☀️ 晴 / ⛅ 晴间多云 / ☁️ 阴 / 🌫️ 有雾 / 🌦️ 毛毛雨 / 🌧️ 有雨 / ❄️ 有雪 / ⛈️ 雷阵雨，并驱动花园天空与天气动效
 - 网络失败自动降级，不影响主流程
 
 ### 🗑️ 回收站
@@ -87,7 +102,7 @@
 ### 👤 我的
 
 - 昵称与头像设置
-- 深色模式开关
+- 深色模式开关（深夜森林）
 - 提醒时间、天气城市等偏好设置
 - 回收站入口
 
@@ -101,6 +116,7 @@
 | UI | Jetpack Compose（Material 3） |
 | 架构 | 单 Activity + Navigation Compose + ViewModel |
 | 状态管理 | `StateFlow` + `collectAsStateWithLifecycle` |
+| 场景动效 | Compose `Canvas` 自绘 + `InfiniteTransition`（天空、天气粒子、植物摇曳、飞鸟虫蝶） |
 | 本地存储 | JSON 序列化 + FileProvider 私有目录存图 |
 | 后台任务 | AlarmManager 精确闹钟 + BroadcastReceiver |
 | 天气数据 | Open-Meteo / bigdatacloud（公开接口，免密钥） |
@@ -121,9 +137,9 @@ CodeGarden/
 │   └── src/main/
 │       ├── AndroidManifest.xml
 │       ├── assets/
-│       │   ├── plants.json           # 500 种植物图鉴数据
+│       │   ├── plants.json           # 1000 种植物图鉴数据
 │       │   ├── plant_images_map.json # 物种 → 图片映射
-│       │   └── plant_images/         # 500 张 WebP 植物图片
+│       │   └── plant_images/         # 635 张 WebP 植物插画
 │       ├── java/com/codegarden/app/
 │       │   ├── MainActivity.kt
 │       │   ├── data/
@@ -136,13 +152,14 @@ CodeGarden/
 │       │   ├── notify/Reminders.kt      # 闹钟 & 通知
 │       │   ├── ui/
 │       │   │   ├── AppNavGraph.kt       # 导航图
-│       │   │   ├── components/          # 通用组件
+│       │   │   ├── components/          # 通用组件（含花园场景 GardenShowcase）
 │       │   │   ├── screens/             # 各功能页面
 │       │   │   └── theme/               # 主题与配色
 │       │   └── viewmodel/MainViewModel.kt
 │       └── res/                         # 资源文件
+├── docs/screenshots/              # README 展示图
 ├── releases/
-│   └── MyGarden-v1.0.apk          # 可直接安装的发布包
+│   └── MyGarden-v2.0.apk          # 可直接安装的发布包
 ├── build.gradle.kts
 ├── settings.gradle.kts
 └── gradle.properties
@@ -186,7 +203,7 @@ cd MyGarden
 2. 在项目根目录创建 `keystore.properties`：
 
    ```properties
-   storeFile=../_tools/codegarden-release.jks
+   storeFile=../keystore/codegarden-release.jks
    storePassword=你的密钥库密码
    keyAlias=codegarden
    keyPassword=你的密钥密码
@@ -200,6 +217,22 @@ cd MyGarden
 
 > `keystore.properties` 与 `*.jks` 已被 `.gitignore` 排除，**不会**被提交到仓库。
 > 若未提供 `keystore.properties`，构建会自动跳过签名并产出 unsigned APK，不影响任何人克隆后正常编译。
+
+---
+
+## 📝 更新日志
+
+### v2.0
+
+- **全新花园场景**：首页植物改为插画立在草地上，随时间推移轻轻摇曳
+- **天空随天气变化**：晴 / 阴 / 雾 / 雨 / 雪 / 雷阵雨 各有独立配色与粒子效果
+- **昼夜系统**：夜间转深蓝星空，星星闪烁、流星划过；白天有飞鸟、蝴蝶与蜜蜂
+- **图鉴扩充至 1000 种**，插画增至 635 张，补齐水生、球根、香草等分类
+- 新增「深夜森林」深色模式，夜间浏览更护眼
+
+### v1.0
+
+- 首个公开版本：花园首页、养护日历、植物图鉴、打卡、提醒、回收站
 
 ---
 

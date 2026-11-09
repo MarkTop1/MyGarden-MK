@@ -35,7 +35,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = PlantRepository(app)
     private val saved = repo.load()
 
-    /** 内置 500 种盆栽图鉴 */
+    /** 内置 1000 种盆栽图鉴 */
     val catalog: List<PlantSpecies> get() = repo.catalog
 
     private val _state = MutableStateFlow(saved ?: AppState(user = defaultUser()))
