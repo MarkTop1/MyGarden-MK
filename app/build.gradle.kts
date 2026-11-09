@@ -4,6 +4,21 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+import java.util.Properties
+
+// 读取本地签名配置。keystore.properties 已被 .gitignore 忽略、不会入库；
+// 若文件缺失则自动跳过签名，保证任何人克隆仓库后都能直接构建 debug 包。
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) {
+        // 必须用 UTF-8 reader：Properties.load(InputStream) 固定按 ISO-8859-1 解析，
+        // 路径含中文时会乱码导致签名配置被静默跳过。
+        keystorePropsFile.reader(Charsets.UTF_8).use { load(it) }
+    }
+}
+val hasReleaseKeystore = keystoreProps.getProperty("storeFile")
+    ?.let { storePath -> rootProject.file(storePath).exists() } == true
+
 android {
     namespace = "com.codegarden.app"
     compileSdk = 34
@@ -13,13 +28,27 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "1.0"
+    }
+
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

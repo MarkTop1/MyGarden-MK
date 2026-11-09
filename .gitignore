@@ -4,6 +4,9 @@
 *.ap_
 *.aab
 
+# 例外：正式发布包需要随仓库分发，可直接下载安装
+!releases/*.apk
+
 # Files for the ART/Dalvik VM
 *.dex
 
@@ -41,6 +44,8 @@ captures/
 *.keystore
 *.p12
 *.pfx
+keystore.properties
+local.keystore.properties
 
 # Credential / environment files
 *.env

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">我的花园</string>
+    <!-- 应用显示名：英文为默认名（仓库 MyGarden / 我的花园） -->
+    <string name="app_name">My Garden</string>
 </resources>
